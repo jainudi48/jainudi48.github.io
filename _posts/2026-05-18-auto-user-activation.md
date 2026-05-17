@@ -2,9 +2,7 @@
 layout: post
 title: "Designing Automatic User Activation for Enterprise Desktop Applications"
 date: 2026-05-18
-categories: [system-design, desktop-engineering, enterprise-software]
-tags: [windows, authentication, enterprise, architecture, telemetry, system-design]
-description: "A deep dive into designing a resilient automatic user activation system for enterprise desktop applications."
+categories: [system-design]
 ---
 
 # Designing Automatic User Activation for Enterprise Desktop Applications

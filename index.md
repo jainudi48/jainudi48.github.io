@@ -3,7 +3,7 @@ layout: default
 title: Engineering Blog
 ---
 
-# Engineering Blog
+<h1>Engineering Blog</h1>
 
 <ul>
   {% for post in site.posts %}

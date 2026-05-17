@@ -1,4 +1,6 @@
 title: Udit Jain
 description: Real-Time Systems • AI Infrastructure • Enterprise Architecture
 theme: minima
-markdown: kramdown
+
+plugins:
+  - jekyll-feed

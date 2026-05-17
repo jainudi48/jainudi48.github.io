@@ -1,0 +1,14 @@
+---
+layout: default
+title: Engineering Blog
+---
+
+<h1>Engineering Blog</h1>
+
+<p>Total posts: {{ site.posts.size }}</p>
+
+{% for post in site.posts %}
+  <div>
+    <a href="{{ post.url }}">{{ post.title }}</a>
+  </div>
+{% endfor %}

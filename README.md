@@ -1,4 +1,3 @@
-````markdown
 ---
 layout: post
 title: "Designing Automatic User Activation for Enterprise Desktop Applications"
@@ -579,4 +578,3 @@ A huge part of building production-ready systems involves:
 
 These systems are often invisible to end users —
 but they are critical to making enterprise software work at scale.
-````

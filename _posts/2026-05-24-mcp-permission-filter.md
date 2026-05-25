@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Phase 0 — MCP Permission Filter: My First Real Python + Pydantic Project"
+title: "MCP Permission Filter: My First Real Python + Pydantic Project"
 date: 2026-05-24
 categories: [ai-engineering, python, pydantic, mcp]
 tags: [python, pydantic, mcp, permissions, rbac, ai-engineering]

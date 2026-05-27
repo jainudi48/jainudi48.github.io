@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Phase 1 — Tool Use Rings: How Claude Actually Calls Tools (Under the Hood)"
+title: "Tool Use Rings: How Claude Actually Calls Tools (Under the Hood)"
 date: 2026-05-27
 categories: [ai-engineering, anthropic, tool-use, agents]
 tags: [anthropic, claude, tool-use, mcp, agentic-loop, python-sdk, ai-engineering]

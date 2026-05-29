@@ -5,6 +5,7 @@ date: 2025-05-29
 categories: [python, software-engineering, learning]
 tags: [python, cpython, internals, jit, gil, numba, mypyc, pypy, performance, beginners]
 description: "The mental model you need before writing a single line of Python — execution pipeline, memory management, the GIL, speed tools, and the packaging ecosystem."
+excerpt_separator: <!--more-->
 ---
 
 Most people start learning Python without understanding what Python actually is.
@@ -30,7 +31,29 @@ It only hurts CPU-bound multithreaded code. I/O-bound code — most web apps, AP
 
 Every question that typically surfaces when learning Python internals is addressed in the chapter below — before you can even ask it.
 
+<!--more-->
+
 ---
+
+<nav class="toc" style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:1rem 1.5rem;margin-bottom:2rem;">
+  <strong>Contents</strong>
+  <ol style="margin:0.5rem 0 0 0;padding-left:1.2rem;">
+    <li><a href="#1-the-big-picture">The Big Picture</a></li>
+    <li><a href="#2-cpython-vs-pvm--the-precise-distinction">CPython vs PVM</a></li>
+    <li><a href="#3-the-compilation-stages-in-detail">Compilation Stages</a></li>
+    <li><a href="#4-what-interpreting-actually-means">What "Interpreting" Actually Means</a></li>
+    <li><a href="#5-memory-management">Memory Management</a></li>
+    <li><a href="#6-the-gil--global-interpreter-lock">The GIL</a></li>
+    <li><a href="#7-python-runtimes">Python Runtimes</a></li>
+    <li><a href="#8-why-pypy-is-faster--and-why-its-not-the-default">Why PyPy Is Faster</a></li>
+    <li><a href="#9-llvm--the-universal-compiler-backend">LLVM</a></li>
+    <li><a href="#10-numba--surgical-jit-for-python">Numba</a></li>
+    <li><a href="#11-why-numba-doesnt-work-with-pandas">Why Numba Doesn't Work With Pandas</a></li>
+    <li><a href="#12-mypyc--compiling-type-annotated-python-to-c">mypyc</a></li>
+    <li><a href="#13-the-speed-problem--full-solution-landscape">Speed Problem — Full Landscape</a></li>
+    <li><a href="#14-the-python-ecosystem">The Python Ecosystem</a></li>
+  </ol>
+</nav>
 
 # Chapter 1 — What is Python?
 
@@ -803,7 +826,7 @@ Ecosystem:
 ---
 
 ## Interactive Visual — Python Internals at a Glance
- 
+
 <style>
 .pip-step { cursor:pointer; transition: opacity .2s; }
 .pip-step:hover { opacity:.85; }
@@ -822,8 +845,9 @@ Ecosystem:
   .py-tab.active { background:#2a2a2a; color:#eee; border-color:#555; }
 }
 </style>
- 
+
 <div style="font-family:sans-serif;max-width:100%;padding:16px 0">
+
 <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px">
   <button class="py-tab active" onclick="pyShowTab('pipeline',this)">Execution pipeline</button>
   <button class="py-tab" onclick="pyShowTab('myths',this)">Myths vs reality</button>
@@ -831,6 +855,7 @@ Ecosystem:
   <button class="py-tab" onclick="pyShowTab('gil',this)">The GIL</button>
   <button class="py-tab" onclick="pyShowTab('speed',this)">Speed tools</button>
 </div>
+
 <!-- PIPELINE -->
 <div id="pytab-pipeline">
   <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">How Python runs your code</p>
@@ -858,60 +883,62 @@ Ecosystem:
         }
       </style>
     </defs>
+
     <g class="pip-step" onclick="pyShowDetail('py')">
       <rect class="pybox" x="10" y="24" width="108" height="60" rx="8"/>
       <text class="pyt" x="64" y="50" text-anchor="middle" dominant-baseline="central">your .py</text>
       <text class="pyts" x="64" y="68" text-anchor="middle" dominant-baseline="central">Source code</text>
     </g>
- 
+
     <line x1="118" y1="54" x2="143" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
     <text class="pyts" x="130" y="44" text-anchor="middle">compile</text>
- 
+
     <g class="pip-step" onclick="pyShowDetail('bytecode')">
       <rect class="pybox-purple" x="146" y="24" width="118" height="60" rx="8"/>
       <text class="pyt" x="205" y="50" text-anchor="middle" dominant-baseline="central">bytecode</text>
       <text class="pyts" x="205" y="68" text-anchor="middle" dominant-baseline="central">.pyc / __pycache__</text>
     </g>
- 
+
     <line x1="264" y1="54" x2="289" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
     <text class="pyts" x="276" y="44" text-anchor="middle">interpret</text>
- 
+
     <g class="pip-step" onclick="pyShowDetail('pvm')">
       <rect class="pybox-teal" x="292" y="24" width="98" height="60" rx="8"/>
       <text class="pyt" x="341" y="50" text-anchor="middle" dominant-baseline="central">PVM</text>
       <text class="pyts" x="341" y="68" text-anchor="middle" dominant-baseline="central">bytecode loop</text>
     </g>
- 
+
     <line x1="390" y1="54" x2="415" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
     <text class="pyts" x="402" y="44" text-anchor="middle">calls</text>
- 
+
     <g class="pip-step" onclick="pyShowDetail('c')">
       <rect class="pybox-coral" x="418" y="24" width="100" height="60" rx="8"/>
       <text class="pyt" x="468" y="50" text-anchor="middle" dominant-baseline="central">C functions</text>
       <text class="pyts" x="468" y="68" text-anchor="middle" dominant-baseline="central">native machine code</text>
     </g>
- 
+
     <line x1="518" y1="54" x2="543" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
- 
+
     <g class="pip-step" onclick="pyShowDetail('cpu')">
       <rect class="pybox-green" x="546" y="24" width="98" height="60" rx="8"/>
       <text class="pyt" x="595" y="50" text-anchor="middle" dominant-baseline="central">CPU result</text>
       <text class="pyts" x="595" y="68" text-anchor="middle" dominant-baseline="central">your output</text>
     </g>
- 
+
     <!-- CPython brace -->
     <rect x="10" y="108" width="380" height="44" rx="6" fill="none" stroke-dasharray="4 3" stroke="#bbb" stroke-width="0.8"/>
     <text class="pyt" x="200" y="126" text-anchor="middle" dominant-baseline="central" style="font-size:12px">CPython</text>
     <text class="pyts" x="200" y="143" text-anchor="middle" dominant-baseline="central">Compiler + PVM bundled together</text>
- 
+
     <!-- Detail area -->
     <rect id="py-detail-box" x="10" y="172" width="658" height="64" rx="8" fill="#f0f9f5" stroke="#5dcaa5" stroke-width="0.8" opacity="0"/>
     <text id="py-detail-title" class="pyt" x="339" y="196" text-anchor="middle" dominant-baseline="central" opacity="0" style="font-size:13px"></text>
     <text id="py-detail-sub" class="pyts" x="339" y="218" text-anchor="middle" dominant-baseline="central" opacity="0" style="font-size:11px"></text>
- 
+
     <text class="pyts" x="340" y="290" text-anchor="middle" style="font-size:11px">👆 tap any box to learn more</text>
   </svg>
 </div>
+
 <!-- MYTHS -->
 <div id="pytab-myths" style="display:none">
   <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">Common misconceptions — corrected</p>
@@ -938,6 +965,7 @@ Ecosystem:
     </div>
   </div>
 </div>
+
 <!-- MEMORY -->
 <div id="pytab-memory" style="display:none">
   <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">Two-layer memory management</p>
@@ -957,15 +985,16 @@ Ecosystem:
     <text class="pyts2" x="161" y="60" text-anchor="middle">Primary. Frees memory immediately</text>
     <text class="pyts2" x="161" y="76" text-anchor="middle">when refcount hits 0.</text>
     <text class="pyts2" x="161" y="92" text-anchor="middle">Deterministic. Cannot handle cycles.</text>
+
     <line x1="312" y1="69" x2="358" y2="69" stroke="#aaa" stroke-width="1" fill="none" marker-end="url(#pyarr2)"/>
     <text class="pyts2" x="335" y="58" text-anchor="middle">fills gap</text>
- 
+
     <rect x="362" y="14" width="306" height="110" rx="10" fill="#faeeda" stroke="#ef9f27" stroke-width="0.8"/>
     <text class="pyt2" x="515" y="40" text-anchor="middle" dominant-baseline="central">Layer 2 — cyclic GC</text>
     <text class="pyts2" x="515" y="60" text-anchor="middle">Secondary. Handles circular refs</text>
     <text class="pyts2" x="515" y="76" text-anchor="middle">refcount can never catch.</text>
     <text class="pyts2" x="515" y="92" text-anchor="middle">Generational: gen0, gen1, gen2.</text>
- 
+
     <rect x="10" y="148" width="658" height="106" rx="8" fill="none" stroke-dasharray="4 3" stroke="#bbb" stroke-width="0.8"/>
     <text class="pyt2" x="339" y="168" text-anchor="middle" style="font-size:12px">The circular reference problem</text>
     <rect x="140" y="182" width="80" height="34" rx="6" fill="#faece7" stroke="#f0997b" stroke-width="0.8"/>
@@ -978,6 +1007,7 @@ Ecosystem:
     <text class="pyts2" x="340" y="240" text-anchor="middle">b['ref'] = a — both stay at refcount 1 after del. Cyclic GC catches these.</text>
   </svg>
 </div>
+
 <!-- GIL -->
 <div id="pytab-gil" style="display:none">
   <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">The Global Interpreter Lock</p>
@@ -1003,6 +1033,7 @@ Ecosystem:
     <rect x="178" y="74" width="132" height="30" rx="4" fill="#dbeafe" stroke="none"/>
     <text class="pyts3" x="244" y="89" text-anchor="middle" dominant-baseline="central">running ← GIL held</text>
     <text class="pyts3" x="170" y="122" text-anchor="middle">threads take turns every ~5ms — effectively serial on CPU work</text>
+
     <text class="pyt3" x="510" y="22" text-anchor="middle">I/O-bound — GIL doesn't matter</text>
     <rect x="370" y="34" width="100" height="30" rx="6" fill="#e1f5ee" stroke="#5dcaa5" stroke-width="0.8"/>
     <text class="pyt3" x="420" y="49" text-anchor="middle" dominant-baseline="central" style="font-size:12px">thread 1</text>
@@ -1017,11 +1048,11 @@ Ecosystem:
     <rect x="558" y="74" width="100" height="30" rx="4" fill="#dbeafe" stroke="none"/>
     <text class="pyts3" x="608" y="89" text-anchor="middle" dominant-baseline="central">running</text>
     <text class="pyts3" x="510" y="122" text-anchor="middle">GIL releases during I/O — real concurrency achieved</text>
- 
+
     <rect x="10" y="142" width="658" height="46" rx="8" fill="none" stroke-dasharray="4 3" stroke="#bbb" stroke-width="0.8"/>
     <text class="pyt3" x="339" y="160" text-anchor="middle" style="font-size:12px">Python 3.13 — experimental no-GIL build</text>
     <text class="pyts3" x="339" y="178" text-anchor="middle">Build CPython with --disable-gil for true CPU-bound parallelism. Still experimental.</text>
- 
+
     <text class="pyt3" x="339" y="218" text-anchor="middle" style="font-size:12px">Escape the GIL today</text>
     <rect x="10" y="228" width="142" height="30" rx="6" fill="#f7f7f7" stroke="#ccc" stroke-width="0.8"/>
     <text class="pyts3" x="81" y="243" text-anchor="middle" dominant-baseline="central">multiprocessing</text>
@@ -1035,6 +1066,7 @@ Ecosystem:
     <text class="pyts3" x="585" y="243" text-anchor="middle" dominant-baseline="central">Python 3.13 no-GIL</text>
   </svg>
 </div>
+
 <!-- SPEED TOOLS -->
 <div id="pytab-speed" style="display:none">
   <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">When and what speed tool to reach for</p>
@@ -1089,7 +1121,9 @@ Ecosystem:
     <text class="pyts4" x="608" y="100" text-anchor="middle">CPU-bound</text>
   </svg>
 </div>
+
 </div>
+
 <script>
 function pyShowTab(name, el) {
   ['pipeline','myths','memory','gil','speed'].forEach(function(t) {
@@ -1098,6 +1132,7 @@ function pyShowTab(name, el) {
   document.querySelectorAll('.py-tab').forEach(function(t) { t.classList.remove('active'); });
   el.classList.add('active');
 }
+
 var pyDetails = {
   py: ["Your .py source file", "CPython's compiler parses it into an AST, then compiles to bytecode. This step happens automatically."],
   bytecode: ["Bytecode (.pyc)", "Stored in __pycache__. Platform-independent instructions. Still needs PVM to run — not machine code."],
@@ -1105,6 +1140,7 @@ var pyDetails = {
   c: ["C functions", "The heavy lifting. NumPy, Pandas, built-ins are pre-compiled C. Already native machine code when called."],
   cpu: ["CPU result", "C machine code runs directly on hardware. This is why NumPy loops are fast — they skip the PVM entirely."]
 };
+
 function pyShowDetail(key) {
   var info = pyDetails[key];
   var box = document.getElementById('py-detail-box');
@@ -1117,4 +1153,3 @@ function pyShowDetail(key) {
   sub.textContent = info[1];
 }
 </script>
- 

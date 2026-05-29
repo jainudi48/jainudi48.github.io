@@ -800,3 +800,321 @@ Ecosystem:
   poetry           → full dependency + build management
   pyenv            → Python version management
 ```
+---
+
+## Interactive Visual — Python Internals at a Glance
+ 
+<style>
+.pip-step { cursor:pointer; transition: opacity .2s; }
+.pip-step:hover { opacity:.85; }
+.myth-row { border-bottom:1px solid #e5e5e5; padding:10px 0; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.myth-label { font-size:12px; color:#888; margin-bottom:3px; }
+.myth-text { font-size:13px; }
+.tool-card { border:1px solid #e5e5e5; border-radius:8px; padding:10px 12px; background:#fff; }
+.tool-name { font-size:13px; font-weight:600; }
+.tool-when { font-size:11px; color:#666; margin-top:2px; }
+.py-tab { cursor:pointer; padding:6px 14px; border-radius:8px; font-size:13px; color:#666; transition:background .15s, color .15s; border:1px solid #e5e5e5; background:#fff; white-space:nowrap; display:inline-block; margin:2px; }
+.py-tab.active { background:#f3f3f3; color:#111; font-weight:600; border-color:#bbb; }
+@media (prefers-color-scheme: dark) {
+  .myth-row { border-bottom-color:#333; }
+  .tool-card { background:#1a1a1a; border-color:#333; }
+  .py-tab { background:#1a1a1a; border-color:#333; color:#aaa; }
+  .py-tab.active { background:#2a2a2a; color:#eee; border-color:#555; }
+}
+</style>
+ 
+<div style="font-family:sans-serif;max-width:100%;padding:16px 0">
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px">
+  <button class="py-tab active" onclick="pyShowTab('pipeline',this)">Execution pipeline</button>
+  <button class="py-tab" onclick="pyShowTab('myths',this)">Myths vs reality</button>
+  <button class="py-tab" onclick="pyShowTab('memory',this)">Memory</button>
+  <button class="py-tab" onclick="pyShowTab('gil',this)">The GIL</button>
+  <button class="py-tab" onclick="pyShowTab('speed',this)">Speed tools</button>
+</div>
+<!-- PIPELINE -->
+<div id="pytab-pipeline">
+  <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">How Python runs your code</p>
+  <svg width="100%" viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="pyarr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <style>
+        .pybox { fill:#f7f7f7; stroke:#ccc; stroke-width:0.8; }
+        .pybox-purple { fill:#eeedfe; stroke:#afa9ec; stroke-width:0.8; }
+        .pybox-teal { fill:#e1f5ee; stroke:#5dcaa5; stroke-width:0.8; }
+        .pybox-coral { fill:#faece7; stroke:#f0997b; stroke-width:0.8; }
+        .pybox-green { fill:#eaf3de; stroke:#97c459; stroke-width:0.8; }
+        .pyt { font-family:sans-serif; font-size:13px; font-weight:600; fill:#333; }
+        .pyts { font-family:sans-serif; font-size:11px; fill:#666; }
+        @media (prefers-color-scheme: dark) {
+          .pybox { fill:#2a2a2a; stroke:#444; }
+          .pybox-purple { fill:#26215c; stroke:#7f77dd; }
+          .pybox-teal { fill:#04342c; stroke:#1d9e75; }
+          .pybox-coral { fill:#4a1b0c; stroke:#d85a30; }
+          .pybox-green { fill:#173404; stroke:#639922; }
+          .pyt { fill:#eee; }
+          .pyts { fill:#aaa; }
+        }
+      </style>
+    </defs>
+    <g class="pip-step" onclick="pyShowDetail('py')">
+      <rect class="pybox" x="10" y="24" width="108" height="60" rx="8"/>
+      <text class="pyt" x="64" y="50" text-anchor="middle" dominant-baseline="central">your .py</text>
+      <text class="pyts" x="64" y="68" text-anchor="middle" dominant-baseline="central">Source code</text>
+    </g>
+ 
+    <line x1="118" y1="54" x2="143" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
+    <text class="pyts" x="130" y="44" text-anchor="middle">compile</text>
+ 
+    <g class="pip-step" onclick="pyShowDetail('bytecode')">
+      <rect class="pybox-purple" x="146" y="24" width="118" height="60" rx="8"/>
+      <text class="pyt" x="205" y="50" text-anchor="middle" dominant-baseline="central">bytecode</text>
+      <text class="pyts" x="205" y="68" text-anchor="middle" dominant-baseline="central">.pyc / __pycache__</text>
+    </g>
+ 
+    <line x1="264" y1="54" x2="289" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
+    <text class="pyts" x="276" y="44" text-anchor="middle">interpret</text>
+ 
+    <g class="pip-step" onclick="pyShowDetail('pvm')">
+      <rect class="pybox-teal" x="292" y="24" width="98" height="60" rx="8"/>
+      <text class="pyt" x="341" y="50" text-anchor="middle" dominant-baseline="central">PVM</text>
+      <text class="pyts" x="341" y="68" text-anchor="middle" dominant-baseline="central">bytecode loop</text>
+    </g>
+ 
+    <line x1="390" y1="54" x2="415" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
+    <text class="pyts" x="402" y="44" text-anchor="middle">calls</text>
+ 
+    <g class="pip-step" onclick="pyShowDetail('c')">
+      <rect class="pybox-coral" x="418" y="24" width="100" height="60" rx="8"/>
+      <text class="pyt" x="468" y="50" text-anchor="middle" dominant-baseline="central">C functions</text>
+      <text class="pyts" x="468" y="68" text-anchor="middle" dominant-baseline="central">native machine code</text>
+    </g>
+ 
+    <line x1="518" y1="54" x2="543" y2="54" stroke="#aaa" stroke-width="1.2" fill="none" marker-end="url(#pyarr)"/>
+ 
+    <g class="pip-step" onclick="pyShowDetail('cpu')">
+      <rect class="pybox-green" x="546" y="24" width="98" height="60" rx="8"/>
+      <text class="pyt" x="595" y="50" text-anchor="middle" dominant-baseline="central">CPU result</text>
+      <text class="pyts" x="595" y="68" text-anchor="middle" dominant-baseline="central">your output</text>
+    </g>
+ 
+    <!-- CPython brace -->
+    <rect x="10" y="108" width="380" height="44" rx="6" fill="none" stroke-dasharray="4 3" stroke="#bbb" stroke-width="0.8"/>
+    <text class="pyt" x="200" y="126" text-anchor="middle" dominant-baseline="central" style="font-size:12px">CPython</text>
+    <text class="pyts" x="200" y="143" text-anchor="middle" dominant-baseline="central">Compiler + PVM bundled together</text>
+ 
+    <!-- Detail area -->
+    <rect id="py-detail-box" x="10" y="172" width="658" height="64" rx="8" fill="#f0f9f5" stroke="#5dcaa5" stroke-width="0.8" opacity="0"/>
+    <text id="py-detail-title" class="pyt" x="339" y="196" text-anchor="middle" dominant-baseline="central" opacity="0" style="font-size:13px"></text>
+    <text id="py-detail-sub" class="pyts" x="339" y="218" text-anchor="middle" dominant-baseline="central" opacity="0" style="font-size:11px"></text>
+ 
+    <text class="pyts" x="340" y="290" text-anchor="middle" style="font-size:11px">👆 tap any box to learn more</text>
+  </svg>
+</div>
+<!-- MYTHS -->
+<div id="pytab-myths" style="display:none">
+  <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">Common misconceptions — corrected</p>
+  <div>
+    <div class="myth-row">
+      <div><div class="myth-label">❌ The myth</div><div class="myth-text">"Python is just interpreted"</div></div>
+      <div><div class="myth-label">✅ Reality</div><div class="myth-text">Python <em>compiles</em> to bytecode first. The PVM then interprets that bytecode. Two-stage pipeline.</div></div>
+    </div>
+    <div class="myth-row">
+      <div><div class="myth-label">❌ The myth</div><div class="myth-text">"Python is slow"</div></div>
+      <div><div class="myth-label">✅ Reality</div><div class="myth-text">NumPy, Pandas, TensorFlow are C — already near-native. Only pure Python loops are slow.</div></div>
+    </div>
+    <div class="myth-row">
+      <div><div class="myth-label">❌ The myth</div><div class="myth-text">"CPython and PVM are the same"</div></div>
+      <div><div class="myth-label">✅ Reality</div><div class="myth-text">CPython is the full runtime (compiler + VM). PVM is just the execution engine inside it.</div></div>
+    </div>
+    <div class="myth-row">
+      <div><div class="myth-label">❌ The myth</div><div class="myth-text">"The GIL ruins multithreading"</div></div>
+      <div><div class="myth-label">✅ Reality</div><div class="myth-text">GIL only hurts CPU-bound threaded code. I/O-bound code — web apps, APIs — completely unaffected.</div></div>
+    </div>
+    <div class="myth-row" style="border-bottom:none">
+      <div><div class="myth-label">❌ The myth</div><div class="myth-text">"Interpreting = converting to machine code"</div></div>
+      <div><div class="myth-label">✅ Reality</div><div class="myth-text">Interpreting means: read one instruction, act on it, repeat. No machine code translation ever.</div></div>
+    </div>
+  </div>
+</div>
+<!-- MEMORY -->
+<div id="pytab-memory" style="display:none">
+  <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">Two-layer memory management</p>
+  <svg width="100%" viewBox="0 0 680 270" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="pyarr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+      <style>
+        .pyt2 { font-family:sans-serif; font-size:13px; font-weight:600; fill:#333; }
+        .pyts2 { font-family:sans-serif; font-size:11px; fill:#666; }
+        @media (prefers-color-scheme: dark) { .pyt2 { fill:#eee; } .pyts2 { fill:#aaa; } }
+      </style>
+    </defs>
+    <rect x="10" y="14" width="302" height="110" rx="10" fill="#e1f5ee" stroke="#5dcaa5" stroke-width="0.8"/>
+    <text class="pyt2" x="161" y="40" text-anchor="middle" dominant-baseline="central">Layer 1 — reference counting</text>
+    <text class="pyts2" x="161" y="60" text-anchor="middle">Primary. Frees memory immediately</text>
+    <text class="pyts2" x="161" y="76" text-anchor="middle">when refcount hits 0.</text>
+    <text class="pyts2" x="161" y="92" text-anchor="middle">Deterministic. Cannot handle cycles.</text>
+    <line x1="312" y1="69" x2="358" y2="69" stroke="#aaa" stroke-width="1" fill="none" marker-end="url(#pyarr2)"/>
+    <text class="pyts2" x="335" y="58" text-anchor="middle">fills gap</text>
+ 
+    <rect x="362" y="14" width="306" height="110" rx="10" fill="#faeeda" stroke="#ef9f27" stroke-width="0.8"/>
+    <text class="pyt2" x="515" y="40" text-anchor="middle" dominant-baseline="central">Layer 2 — cyclic GC</text>
+    <text class="pyts2" x="515" y="60" text-anchor="middle">Secondary. Handles circular refs</text>
+    <text class="pyts2" x="515" y="76" text-anchor="middle">refcount can never catch.</text>
+    <text class="pyts2" x="515" y="92" text-anchor="middle">Generational: gen0, gen1, gen2.</text>
+ 
+    <rect x="10" y="148" width="658" height="106" rx="8" fill="none" stroke-dasharray="4 3" stroke="#bbb" stroke-width="0.8"/>
+    <text class="pyt2" x="339" y="168" text-anchor="middle" style="font-size:12px">The circular reference problem</text>
+    <rect x="140" y="182" width="80" height="34" rx="6" fill="#faece7" stroke="#f0997b" stroke-width="0.8"/>
+    <text class="pyt2" x="180" y="199" text-anchor="middle" dominant-baseline="central">dict a</text>
+    <rect x="460" y="182" width="80" height="34" rx="6" fill="#faece7" stroke="#f0997b" stroke-width="0.8"/>
+    <text class="pyt2" x="500" y="199" text-anchor="middle" dominant-baseline="central">dict b</text>
+    <path d="M220 190 C340 168 340 168 460 190" fill="none" stroke="#aaa" stroke-width="1" marker-end="url(#pyarr2)"/>
+    <path d="M460 210 C340 232 340 232 220 210" fill="none" stroke="#aaa" stroke-width="1" marker-end="url(#pyarr2)"/>
+    <text class="pyts2" x="340" y="166" text-anchor="middle">a['ref'] = b</text>
+    <text class="pyts2" x="340" y="240" text-anchor="middle">b['ref'] = a — both stay at refcount 1 after del. Cyclic GC catches these.</text>
+  </svg>
+</div>
+<!-- GIL -->
+<div id="pytab-gil" style="display:none">
+  <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">The Global Interpreter Lock</p>
+  <svg width="100%" viewBox="0 0 680 270" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <style>
+        .pyt3 { font-family:sans-serif; font-size:13px; font-weight:600; fill:#333; }
+        .pyts3 { font-family:sans-serif; font-size:11px; fill:#666; }
+        @media (prefers-color-scheme: dark) { .pyt3 { fill:#eee; } .pyts3 { fill:#aaa; } }
+      </style>
+    </defs>
+    <text class="pyt3" x="170" y="22" text-anchor="middle">CPU-bound — GIL hurts</text>
+    <rect x="10" y="34" width="100" height="30" rx="6" fill="#faece7" stroke="#f0997b" stroke-width="0.8"/>
+    <text class="pyt3" x="60" y="49" text-anchor="middle" dominant-baseline="central" style="font-size:12px">thread 1</text>
+    <rect x="114" y="34" width="130" height="30" rx="4" fill="#dbeafe" stroke="none"/>
+    <text class="pyts3" x="179" y="49" text-anchor="middle" dominant-baseline="central">running ← GIL held</text>
+    <rect x="250" y="34" width="60" height="30" rx="4" fill="#f3f3f3" stroke="none"/>
+    <text class="pyts3" x="280" y="49" text-anchor="middle" dominant-baseline="central">waiting</text>
+    <rect x="10" y="74" width="100" height="30" rx="6" fill="#e8e8e8" stroke="#bbb" stroke-width="0.8"/>
+    <text class="pyt3" x="60" y="89" text-anchor="middle" dominant-baseline="central" style="font-size:12px">thread 2</text>
+    <rect x="114" y="74" width="60" height="30" rx="4" fill="#f3f3f3" stroke="none"/>
+    <text class="pyts3" x="144" y="89" text-anchor="middle" dominant-baseline="central">waiting</text>
+    <rect x="178" y="74" width="132" height="30" rx="4" fill="#dbeafe" stroke="none"/>
+    <text class="pyts3" x="244" y="89" text-anchor="middle" dominant-baseline="central">running ← GIL held</text>
+    <text class="pyts3" x="170" y="122" text-anchor="middle">threads take turns every ~5ms — effectively serial on CPU work</text>
+    <text class="pyt3" x="510" y="22" text-anchor="middle">I/O-bound — GIL doesn't matter</text>
+    <rect x="370" y="34" width="100" height="30" rx="6" fill="#e1f5ee" stroke="#5dcaa5" stroke-width="0.8"/>
+    <text class="pyt3" x="420" y="49" text-anchor="middle" dominant-baseline="central" style="font-size:12px">thread 1</text>
+    <rect x="474" y="34" width="80" height="30" rx="4" fill="#dbeafe" stroke="none"/>
+    <text class="pyts3" x="514" y="49" text-anchor="middle" dominant-baseline="central">running</text>
+    <rect x="558" y="34" width="100" height="30" rx="4" fill="#f3f3f3" stroke="none"/>
+    <text class="pyts3" x="608" y="49" text-anchor="middle" dominant-baseline="central">waiting I/O</text>
+    <rect x="370" y="74" width="100" height="30" rx="6" fill="#e1f5ee" stroke="#5dcaa5" stroke-width="0.8"/>
+    <text class="pyt3" x="420" y="89" text-anchor="middle" dominant-baseline="central" style="font-size:12px">thread 2</text>
+    <rect x="474" y="74" width="80" height="30" rx="4" fill="#f3f3f3" stroke="none"/>
+    <text class="pyts3" x="514" y="89" text-anchor="middle" dominant-baseline="central">waiting I/O</text>
+    <rect x="558" y="74" width="100" height="30" rx="4" fill="#dbeafe" stroke="none"/>
+    <text class="pyts3" x="608" y="89" text-anchor="middle" dominant-baseline="central">running</text>
+    <text class="pyts3" x="510" y="122" text-anchor="middle">GIL releases during I/O — real concurrency achieved</text>
+ 
+    <rect x="10" y="142" width="658" height="46" rx="8" fill="none" stroke-dasharray="4 3" stroke="#bbb" stroke-width="0.8"/>
+    <text class="pyt3" x="339" y="160" text-anchor="middle" style="font-size:12px">Python 3.13 — experimental no-GIL build</text>
+    <text class="pyts3" x="339" y="178" text-anchor="middle">Build CPython with --disable-gil for true CPU-bound parallelism. Still experimental.</text>
+ 
+    <text class="pyt3" x="339" y="218" text-anchor="middle" style="font-size:12px">Escape the GIL today</text>
+    <rect x="10" y="228" width="142" height="30" rx="6" fill="#f7f7f7" stroke="#ccc" stroke-width="0.8"/>
+    <text class="pyts3" x="81" y="243" text-anchor="middle" dominant-baseline="central">multiprocessing</text>
+    <rect x="162" y="228" width="100" height="30" rx="6" fill="#f7f7f7" stroke="#ccc" stroke-width="0.8"/>
+    <text class="pyts3" x="212" y="243" text-anchor="middle" dominant-baseline="central">asyncio (I/O)</text>
+    <rect x="272" y="228" width="90" height="30" rx="6" fill="#f7f7f7" stroke="#ccc" stroke-width="0.8"/>
+    <text class="pyts3" x="317" y="243" text-anchor="middle" dominant-baseline="central">PyPy runtime</text>
+    <rect x="372" y="228" width="120" height="30" rx="6" fill="#f7f7f7" stroke="#ccc" stroke-width="0.8"/>
+    <text class="pyts3" x="432" y="243" text-anchor="middle" dominant-baseline="central">C extensions</text>
+    <rect x="502" y="228" width="166" height="30" rx="6" fill="#f7f7f7" stroke="#ccc" stroke-width="0.8"/>
+    <text class="pyts3" x="585" y="243" text-anchor="middle" dominant-baseline="central">Python 3.13 no-GIL</text>
+  </svg>
+</div>
+<!-- SPEED TOOLS -->
+<div id="pytab-speed" style="display:none">
+  <p style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin:0 0 10px">When and what speed tool to reach for</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
+    <div class="tool-card" style="border-left:3px solid #1D9E75">
+      <div class="tool-name">Numba</div>
+      <div class="tool-when">JIT one numerical function with @jit. Works with NumPy. One decorator, ~100× faster.</div>
+    </div>
+    <div class="tool-card" style="border-left:3px solid #534AB7">
+      <div class="tool-name">mypyc</div>
+      <div class="tool-when">AOT-compile a whole module to C extension using type hints. Best for pure Python libs.</div>
+    </div>
+    <div class="tool-card" style="border-left:3px solid #D85A30">
+      <div class="tool-name">PyPy</div>
+      <div class="tool-when">Swap the entire runtime. Tracing JIT, 5–10× faster. Breaks C extensions (NumPy, Pandas).</div>
+    </div>
+    <div class="tool-card" style="border-left:3px solid #185FA5">
+      <div class="tool-name">multiprocessing</div>
+      <div class="tool-when">Bypass GIL entirely. Separate processes, each with own GIL. True CPU parallelism.</div>
+    </div>
+    <div class="tool-card" style="border-left:3px solid #639922">
+      <div class="tool-name">NumPy / Pandas</div>
+      <div class="tool-when">Already C under the hood. Near-native speed. Bottleneck is your loops, not these libs.</div>
+    </div>
+  </div>
+  <svg width="100%" viewBox="0 0 680 112" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <style>
+        .pyt4 { font-family:sans-serif; font-size:13px; font-weight:600; fill:#333; }
+        .pyts4 { font-family:sans-serif; font-size:11px; fill:#666; }
+        @media (prefers-color-scheme: dark) { .pyt4 { fill:#eee; } .pyts4 { fill:#aaa; } }
+      </style>
+    </defs>
+    <text class="pyts4" x="339" y="16" text-anchor="middle" style="font-weight:600">Scope of optimization →</text>
+    <text class="pyts4" x="85" y="40" text-anchor="middle">per function</text>
+    <line x1="85" y1="46" x2="255" y2="46" stroke="#ddd" stroke-width="0.5"/>
+    <text class="pyts4" x="335" y="40" text-anchor="middle">per module</text>
+    <line x1="255" y1="46" x2="415" y2="46" stroke="#ddd" stroke-width="0.5"/>
+    <text class="pyts4" x="510" y="40" text-anchor="middle">whole program</text>
+    <line x1="415" y1="46" x2="638" y2="46" stroke="#ddd" stroke-width="0.5"/>
+    <rect x="35" y="54" width="100" height="30" rx="6" fill="#e1f5ee" stroke="#5dcaa5" stroke-width="0.8"/>
+    <text class="pyt4" x="85" y="69" text-anchor="middle" dominant-baseline="central">Numba</text>
+    <rect x="285" y="54" width="100" height="30" rx="6" fill="#eeedfe" stroke="#afa9ec" stroke-width="0.8"/>
+    <text class="pyt4" x="335" y="69" text-anchor="middle" dominant-baseline="central">mypyc</text>
+    <rect x="458" y="54" width="80" height="30" rx="6" fill="#faece7" stroke="#f0997b" stroke-width="0.8"/>
+    <text class="pyt4" x="498" y="69" text-anchor="middle" dominant-baseline="central">PyPy</text>
+    <rect x="548" y="54" width="120" height="30" rx="6" fill="#e6f1fb" stroke="#85b7eb" stroke-width="0.8"/>
+    <text class="pyt4" x="608" y="69" text-anchor="middle" dominant-baseline="central">multiprocessing</text>
+    <text class="pyts4" x="85" y="100" text-anchor="middle">numerical only</text>
+    <text class="pyts4" x="335" y="100" text-anchor="middle">typed pure Python</text>
+    <text class="pyts4" x="498" y="100" text-anchor="middle">breaks C exts</text>
+    <text class="pyts4" x="608" y="100" text-anchor="middle">CPU-bound</text>
+  </svg>
+</div>
+</div>
+<script>
+function pyShowTab(name, el) {
+  ['pipeline','myths','memory','gil','speed'].forEach(function(t) {
+    document.getElementById('pytab-'+t).style.display = t === name ? '' : 'none';
+  });
+  document.querySelectorAll('.py-tab').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+}
+var pyDetails = {
+  py: ["Your .py source file", "CPython's compiler parses it into an AST, then compiles to bytecode. This step happens automatically."],
+  bytecode: ["Bytecode (.pyc)", "Stored in __pycache__. Platform-independent instructions. Still needs PVM to run — not machine code."],
+  pvm: ["PVM — Python Virtual Machine", "A C loop that reads one bytecode instruction at a time and calls the right C function. Never produces machine code."],
+  c: ["C functions", "The heavy lifting. NumPy, Pandas, built-ins are pre-compiled C. Already native machine code when called."],
+  cpu: ["CPU result", "C machine code runs directly on hardware. This is why NumPy loops are fast — they skip the PVM entirely."]
+};
+function pyShowDetail(key) {
+  var info = pyDetails[key];
+  var box = document.getElementById('py-detail-box');
+  var title = document.getElementById('py-detail-title');
+  var sub = document.getElementById('py-detail-sub');
+  box.setAttribute('opacity','1');
+  title.setAttribute('opacity','1');
+  sub.setAttribute('opacity','1');
+  title.textContent = info[0];
+  sub.textContent = info[1];
+}
+</script>
+ 

@@ -1,3 +1,37 @@
+---
+layout: post
+title: "Chapter 1 — What is Python?"
+date: 2025-05-29
+categories: [python, software-engineering, learning]
+tags: [python, cpython, internals, jit, gil, numba, mypyc, pypy, performance, beginners]
+description: "The mental model you need before writing a single line of Python — execution pipeline, memory management, the GIL, speed tools, and the packaging ecosystem."
+---
+
+Most people start learning Python without understanding what Python actually is.
+
+They write code, it runs, and they assume it's "just interpreted." Then they hit a performance wall, hear "Python is slow," and have no mental model for why — or what to do about it.
+
+Before writing a single line of Python code, here's what you should actually know:
+
+**Python is not just interpreted.**
+It compiles your `.py` file to bytecode first, then a virtual machine (PVM) executes that bytecode. CPython and PVM are not the same thing — one is the whole program, the other is just the execution engine inside it.
+
+**"Python is slow" is a half-truth.**
+NumPy, Pandas, TensorFlow — the libraries you'll actually use for heavy computation — are written in C. You're already running near-native speed. The slowness is in pure Python loops, not the ecosystem.
+
+**When you do need more speed, you have precise tools:**
+- Numba: surgically JIT-compile numerical hotspots with one decorator
+- mypyc: AOT-compile your whole module to a C extension using type hints
+- PyPy: swap the runtime entirely for a tracing JIT
+- multiprocessing: bypass the GIL for true CPU parallelism
+
+**The GIL isn't the bogeyman it sounds like.**
+It only hurts CPU-bound multithreaded code. I/O-bound code — most web apps, API clients, file processing — is unaffected. And Python 3.13 ships an experimental no-GIL build.
+
+Every question that typically surfaces when learning Python internals is addressed in the chapter below — before you can even ask it.
+
+---
+
 # Chapter 1 — What is Python?
 
 ---

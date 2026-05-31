@@ -729,46 +729,91 @@ When an interviewer asks you to design a system — whether it is an API platfor
 <div class="apx-block">
 <p class="apx-bt">Visual 06 · Putting it together</p>
 <p class="apx-bh">The architecture that uses all three</p>
-<div class="apx-arch">
-<div class="apx-tier">
-<div class="apx-abox client"><div class="apx-an" style="color:var(--ws)">Mobile app</div><div class="apx-ad">varied data needs</div></div>
-<div class="apx-abox client"><div class="apx-an" style="color:var(--ws)">Web app</div><div class="apx-ad">varied data needs</div></div>
-<div class="apx-abox client"><div class="apx-an" style="color:var(--rest)">3rd-party dev</div><div class="apx-ad">unknown consumer</div></div>
+<style>
+.apx .apx-stack{display:flex;flex-direction:column;gap:9px;}
+.apx .apx-row4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:560px){.apx .apx-row4{grid-template-columns:repeat(2,1fr);}}
+.apx .apx-cbox{border:1px solid var(--line);border-radius:10px;padding:13px 8px;text-align:center;background:var(--panel2);}
+.apx .apx-cbox .apx-an{font-size:12.5px;}
+.apx .apx-leg{font-family:'JetBrains Mono',monospace;font-size:10px;text-align:center;letter-spacing:.02em;line-height:1.3;}
+.apx .apx-gwbar{border:1px dashed var(--grpc);background:rgba(34,211,238,.07);border-radius:11px;padding:13px;text-align:center;}
+.apx .apx-gwbar .apx-an{font-size:14px;font-weight:800;color:var(--grpc);}
+.apx .apx-downrow{display:grid;grid-template-columns:repeat(4,1fr);color:var(--mut);text-align:center;font-size:12px;}
+@media(max-width:560px){.apx .apx-downrow{grid-template-columns:repeat(2,1fr);}}
+.apx .apx-hbox{border:1px solid var(--line);border-radius:10px;padding:12px 8px;text-align:center;background:var(--panel2);transition:.18s;}
+.apx .apx-hbox:hover{transform:translateY(-2px);}
+.apx .apx-hbox .apx-an{font-size:11.5px;line-height:1.25;}
+.apx .apx-converge{height:16px;border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;margin:3px 26px 0;}
+.apx .apx-grpcbar{border:1px solid var(--grpc);background:rgba(34,211,238,.06);border-radius:11px;padding:14px;text-align:center;max-width:540px;margin:0 auto;}
+.apx .apx-grpcbar .apx-an{font-size:15px;font-weight:800;color:var(--grpc);}
+.apx .apx-sub2{font-size:13px;color:var(--mut);margin:0 0 16px;line-height:1.5;max-width:66ch;}
+.apx .apx-ws2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:560px){.apx .apx-ws2{grid-template-columns:1fr;}}
+.apx .apx-step{border:1px solid var(--line);border-radius:12px;padding:15px;background:var(--panel2);}
+.apx .apx-step.bad{border-color:rgba(251,113,133,.4);}
+.apx .apx-step.good{border-color:rgba(52,211,153,.4);}
+.apx .apx-steptag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 12px;}
+.apx .apx-step.bad .apx-steptag{color:#fb7185;}
+.apx .apx-step.good .apx-steptag{color:var(--sse);}
+.apx .apx-srv2{border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:var(--ink);}
+.apx .apx-srvname{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:8px;}
+.apx .apx-cl2{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:3px 8px;border-radius:5px;margin:0 5px 5px 0;background:var(--panel2);}
+.apx .apx-cl2.ok{color:var(--sse);border:1px solid rgba(52,211,153,.35);}
+.apx .apx-cl2.no{color:#fb7185;border:1px solid rgba(251,113,133,.35);}
+.apx .apx-srvhint{font-size:10px;color:var(--mut);margin-top:8px;line-height:1.35;}
+.apx .apx-gap{text-align:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#fb7185;padding:10px 0;}
+.apx .apx-bus2{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sse);border:1px solid var(--sse);background:rgba(52,211,153,.08);border-radius:8px;padding:10px;margin:9px 0;}
+.apx .apx-take{font-size:12px;line-height:1.45;margin-top:13px;padding-top:12px;border-top:1px dashed var(--line);}
+.apx .apx-take.bad{color:#e7a3ad;}
+.apx .apx-take.good{color:#9be3c1;}
+</style>
+<div class="apx-stack">
+<div class="apx-row4">
+<div class="apx-cbox"><div class="apx-an" style="color:var(--gql)">Mobile App</div></div>
+<div class="apx-cbox"><div class="apx-an" style="color:var(--gql)">Web App</div></div>
+<div class="apx-cbox"><div class="apx-an" style="color:var(--rest)">3rd-Party Dev</div></div>
+<div class="apx-cbox"><div class="apx-an" style="color:var(--ws)">Real-time Dashboard</div></div>
 </div>
-<div class="apx-flow">↓</div>
-<div class="apx-tier">
-<div class="apx-abox" style="border-color:var(--gql)"><div class="apx-an" style="color:var(--gql)">GraphQL BFF</div><div class="apx-ad">one optimized graph per client</div></div>
-<div class="apx-abox" style="border-color:var(--gql)"><div class="apx-an" style="color:var(--gql)">GraphQL BFF</div><div class="apx-ad">aggregates internal services</div></div>
-<div class="apx-abox" style="border-color:var(--rest)"><div class="apx-an" style="color:var(--rest)">REST API</div><div class="apx-ad">stable, versioned, cacheable</div></div>
+<div class="apx-row4">
+<div class="apx-leg" style="color:var(--gql)">GraphQL<br>&#9660;</div>
+<div class="apx-leg" style="color:var(--gql)">GraphQL<br>&#9660;</div>
+<div class="apx-leg" style="color:var(--rest)">REST<br>&#9660;</div>
+<div class="apx-leg" style="color:var(--ws)">SSE / WebSocket<br>&#9660;</div>
 </div>
-<div class="apx-flow">↓</div>
-<div class="apx-gw"><div class="apx-an">API Gateway</div><div class="apx-ad">REST → gRPC transcoding · auth · rate limiting · observability</div></div>
-<div class="apx-flow">↓</div>
-<div class="apx-tier">
-<div class="apx-abox" style="border-color:var(--grpc)"><div class="apx-an" style="color:var(--grpc)">gRPC service</div><div class="apx-ad">orders</div></div>
-<div class="apx-abox" style="border-color:var(--grpc)"><div class="apx-an" style="color:var(--grpc)">gRPC service</div><div class="apx-ad">users</div></div>
-<div class="apx-abox" style="border-color:var(--grpc)"><div class="apx-an" style="color:var(--grpc)">gRPC service</div><div class="apx-ad">inventory</div></div>
+<div class="apx-gwbar"><div class="apx-an">API Gateway</div><div class="apx-ad">auth &middot; rate limiting &middot; routing &middot; TLS</div></div>
+<div class="apx-downrow"><span>&#9660;</span><span>&#9660;</span><span>&#9660;</span><span>&#9660;</span></div>
+<div class="apx-row4">
+<div class="apx-hbox" style="border-color:var(--gql)"><div class="apx-an" style="color:var(--gql)">GraphQL BFF</div><div class="apx-ad">aggregates the graph</div></div>
+<div class="apx-hbox" style="border-color:var(--rest)"><div class="apx-an" style="color:var(--rest)">REST &#8594; gRPC Transcoder</div><div class="apx-ad">maps REST to RPC</div></div>
+<div class="apx-hbox" style="border-color:var(--ws)"><div class="apx-an" style="color:var(--ws)">WebSocket Handler</div><div class="apx-ad">bidirectional</div></div>
+<div class="apx-hbox" style="border-color:var(--sse)"><div class="apx-an" style="color:var(--sse)">SSE Handler</div><div class="apx-ad">server push</div></div>
+</div>
+<div class="apx-converge"></div>
+<div class="apx-flow">&#9660;</div>
+<div class="apx-grpcbar"><div class="apx-an">gRPC Microservices</div><div class="apx-ad">orders &middot; users &middot; inventory &middot; payments &mdash; the shared backbone</div></div>
+</div>
+<p class="apx-note">Clients never touch microservices directly. Each hits the API Gateway, which routes to the right per-protocol handler; every handler then funnels down to the same gRPC services. The proto file stays the single source of truth, and the REST surface is generated from it.</p>
+</div>
+<div class="apx-block">
+<p class="apx-bt">Visual 07 &middot; WebSocket at scale</p>
+<p class="apx-bh">Why broadcasting needs a pub/sub bus</p>
+<p class="apx-sub2">A WebSocket connection is pinned to one server for its entire life, so a server can only push to the clients it personally holds. The problem appears the moment one message has to reach users who are spread across different servers, like everyone in a chat room.</p>
+<div class="apx-ws2">
+<div class="apx-step bad">
+<p class="apx-steptag">The problem &middot; no shared bus</p>
+<div class="apx-srv2"><div class="apx-srvname">Server 1</div><span class="apx-cl2 ok">User A</span><span class="apx-cl2 ok">User C</span><div class="apx-srvhint">User A sends a message here. Server 1 pushes it to the clients it holds: A and C.</div></div>
+<div class="apx-gap">&#10007; no path across servers</div>
+<div class="apx-srv2"><div class="apx-srvname">Server 2</div><span class="apx-cl2 no">User B</span><div class="apx-srvhint">Server 2 never heard about the message, so User B is left out.</div></div>
+<p class="apx-take bad">Half the room misses the message. Each server is an island that can only reach its own clients.</p>
+</div>
+<div class="apx-step good">
+<p class="apx-steptag">The fix &middot; Redis / Kafka pub/sub</p>
+<div class="apx-srv2"><div class="apx-srvname">Server 1</div><span class="apx-cl2 ok">User A</span><span class="apx-cl2 ok">User C</span><div class="apx-srvhint">Step 1: receives User A's message, then publishes it to the bus.</div></div>
+<div class="apx-bus2">PUB / SUB BUS &#8645; every server subscribes</div>
+<div class="apx-srv2"><div class="apx-srvname">Server 2</div><span class="apx-cl2 ok">User B</span><div class="apx-srvhint">Step 2: receives the message from the bus, then pushes it to User B.</div></div>
+<p class="apx-take good">Publish once, and the bus fans the message out to every server. Each delivers to its own clients, so A, B and C all get it.</p>
 </div>
 </div>
-<p class="apx-note">GraphQL lives as a BFF — never bolted onto a microservice. The proto file stays the single source of truth; the REST surface is derived from it.</p>
-<div style="margin-top:22px;padding-top:20px;border-top:1px dashed var(--line)">
-<p class="apx-bt" style="color:var(--ws)">Bonus · WebSocket at scale</p>
-<p class="apx-bh" style="font-size:15px">Why fan-out needs pub/sub</p>
-<div class="apx-fan">
-<div class="apx-fcol bad">
-<p class="apx-h">Without pub/sub — broken</p>
-<div class="apx-srv">Server 1 <span class="apx-cl">Client A</span><span class="apx-cl">Client C</span></div>
-<div class="apx-srv">Server 2 <span class="apx-cl">Client B</span></div>
-<p style="font-size:11px;color:#fb7185;margin:8px 0 0;line-height:1.4">A message at Server 2 can't reach A or C — they live on Server 1.</p>
-</div>
-<div class="apx-fcol good">
-<p class="apx-h">With pub/sub — works</p>
-<div class="apx-srv">Server 1 <span class="apx-cl">Client A</span><span class="apx-cl">Client C</span></div>
-<div class="apx-bus">↑↓ Redis / Kafka bus ↑↓</div>
-<div class="apx-srv">Server 2 <span class="apx-cl">Client B</span></div>
-<p style="font-size:11px;color:var(--sse);margin:8px 0 0;line-height:1.4">Server 2 publishes; every server pushes to its own clients.</p>
-</div>
-</div>
-</div>
+<p class="apx-note">The takeaway: because WebSocket is stateful, "send to everyone" is never free. The pub/sub bus is the piece that turns a fleet of isolated servers into one logical room.</p>
 </div>
 </div>

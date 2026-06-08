@@ -482,7 +482,7 @@ The final `throw new InvalidOperationException("unreachable")` exists purely to 
 
 ## Architecture: How It All Fits Together
 
-Here is the complete picture when all four patterns compose into a production backend pool:
+Here is the complete picture when all four patterns compose into a production backend pool. **Policy order matters** — get it wrong and retries hammer the same broken backend instead of finding a healthy one.
 
 ```
 Incoming Request
@@ -490,41 +490,46 @@ Incoming Request
        ▼
 ┌─────────────────┐
 │  Token Bucket   │ ← global rate limit (10 req/sec)
-│  Rate Limiter   │
+│  Rate Limiter   │   shed excess load before any real work
 └────────┬────────┘
          │ allowed
          ▼
+┌─────────────────────┐
+│   Retry Wrapper     │ ← OUTERMOST resilience policy
+│  exp. backoff +     │   each attempt re-runs LB selection,
+│  jitter             │   so retries can land on a NEW backend
+└──────────┬──────────┘
+           │ attempt N (N = 1, 2, 3, …)
+           ▼
 ┌─────────────────┐
 │  Load Balancer  │ ← round-robin via Interlocked
-│  (RWLockSlim)   │   skips unhealthy backends
+│  (RWLockSlim)   │   filters: backend.Healthy && CB ≠ OPEN
 └────────┬────────┘
-         │ next backend selected
+         │ backend chosen
          ▼
 ┌─────────────────┐
 │ Circuit Breaker │ ← per-backend state machine
 │ (per backend)   │   CLOSED / OPEN / HALF_OPEN
-└────────┬────────┘
+└────────┬────────┘   fast-fails when OPEN; records ✓ / ✗
          │ allowed
-         ▼
-┌─────────────────┐
-│  Retry Logic    │ ← exponential backoff + jitter
-│  (async)        │   on failure
-└────────┬────────┘
-         │
          ▼
    Backend Server
   (HTTP / gRPC / etc.)
+         │
+   failure ──► bubbles up to Retry Wrapper for next attempt
 
          ⬆
 ┌─────────────────┐
 │ Health Checker  │ ← background loop, probes ALL backends
 │ (CancellToken)  │   updates volatile _healthy flag
-└─────────────────┘
+└─────────────────┘   (read by LB on every selection)
 ```
 
-**Data flow on failure**: request hits rate limiter (passes) → load balancer picks Backend B → circuit breaker for B is OPEN → load balancer skips B, picks Backend C → circuit breaker for C allows → HTTP call fails → retry logic waits 100ms±jitter → retries on Backend C → succeeds → circuit breaker records success.
+**Why Retry is the outermost policy.** The most common mistake is to put Retry *inside* the backend call — between the circuit breaker and the HTTP client. That makes every retry hammer the same backend that just failed. The correct composition (Polly's official guidance, Envoy's router→cluster model, resilience4j's standard recipe) is: **Retry wraps the whole selection-and-call sequence**. Each retry attempt re-enters the load balancer, so a failing backend gets bypassed naturally on the next attempt.
 
-**Concurrency model**: the rate limiter, each circuit breaker, and the backends list all have independent locks. Threads contend per-resource, not on a global lock. The health checker writes `_healthy` flags without blocking request routing threads.
+**Data flow on failure**: request passes the rate limiter. Retry wrapper begins **attempt #1** → load balancer scans backends and picks B (healthy, CB is `CLOSED`) → HTTP call to B times out → B's circuit breaker records a failure → retry wrapper catches the exception, sleeps 100ms ± jitter → **attempt #2** → load balancer re-scans; if B's failures have now crossed the threshold, B's CB is `OPEN` and the LB excludes it → picks C → C's CB is `CLOSED`, call succeeds → C's CB records success → response returned.
+
+**Concurrency model**: the rate limiter, each circuit breaker, and the backends list all have independent locks. Threads contend per-resource, not on a global lock. The health checker writes `_healthy` flags using `volatile` without blocking request-routing threads. The load balancer reads `_healthy` and CB state on every selection; both are designed to be lock-free or near-lock-free on the read path.
 
 ---
 

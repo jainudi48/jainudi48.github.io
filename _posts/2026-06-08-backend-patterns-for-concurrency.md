@@ -972,57 +972,76 @@ function showDetail(name) {
 }
 
 // Rate limiting simulation
-var requests = [];
+var requests = [];          // sliding-window: timestamps of ALLOWED requests in current window
+var requestLog = [];        // {time, allowed} for visualization in BOTH modes
 var limit = 5;
 var windowMs = 10000;
 var useTokenBucket = false;
-var tokens = limit;
+var maxTokens = 5;
+var tokens = maxTokens;
+var refillRatePerSec = limit / (windowMs / 1000); // 0.5 tok/sec → matches sliding-window sustained rate
 var lastRefill = Date.now();
+var timelineLoopStarted = false;
+
+function refillTokens() {
+  var now = Date.now();
+  var elapsed = (now - lastRefill) / 1000;
+  tokens = Math.min(maxTokens, tokens + elapsed * refillRatePerSec);
+  lastRefill = now;
+}
 
 function fireRequest() {
   var now = Date.now();
   var allowed;
-  
+
   if (!useTokenBucket) {
     var cutoff = now - windowMs;
     requests = requests.filter(function(t) { return t > cutoff; });
     allowed = requests.length < limit;
     if (allowed) requests.push(now);
   } else {
-    var elapsed = (now - lastRefill) / 1000;
-    tokens = Math.min(limit, tokens + elapsed * limit);
-    lastRefill = now;
+    refillTokens();
     allowed = tokens >= 1;
     if (allowed) tokens -= 1;
   }
-  
+
+  requestLog.push({time: now, allowed: allowed});
+
   var resultEl = document.getElementById('result-display');
   resultEl.textContent = allowed ? 'ALLOWED ✓' : 'REJECTED ✗';
   resultEl.style.color = allowed ? '#7ee787' : '#ff7b72';
-  
-  updateTimeline();
+
+  renderTimeline();
+  if (!timelineLoopStarted) { timelineLoopStarted = true; tickTimeline(); }
 }
 
-function updateTimeline() {
+function renderTimeline() {
   var now = Date.now();
   var timeline = document.getElementById('timeline');
-  
-  // Remove old dots
   timeline.querySelectorAll('.ir-req-dot').forEach(function(d) { d.remove(); });
-  
+
   var cutoff = now - windowMs;
-  requests.forEach(function(t) {
+  requestLog = requestLog.filter(function(r) { return r.time > cutoff; });
+
+  requestLog.forEach(function(r) {
     var dot = document.createElement('div');
-    dot.className = 'ir-req-dot ' + (t > cutoff ? 'dot-allowed' : 'dot-rejected');
-    dot.style.left = ((t - (now - windowMs)) / windowMs * 100) + '%';
-    dot.style.opacity = t > cutoff ? '1' : '0.3';
+    dot.className = 'ir-req-dot ' + (r.allowed ? 'dot-allowed' : 'dot-rejected');
+    dot.style.left = ((r.time - (now - windowMs)) / windowMs * 100) + '%';
     timeline.appendChild(dot);
   });
-  
-  var active = requests.filter(function(t) { return t > cutoff; });
-  document.getElementById('count-display').textContent = active.length + ' / ' + limit;
-  
-  setTimeout(updateTimeline, 500);
+
+  if (!useTokenBucket) {
+    requests = requests.filter(function(t) { return t > cutoff; });
+    document.getElementById('count-display').textContent = requests.length + ' / ' + limit;
+  } else {
+    refillTokens();
+    document.getElementById('count-display').textContent = tokens.toFixed(1) + ' / ' + maxTokens + ' tok';
+  }
+}
+
+function tickTimeline() {
+  renderTimeline();
+  setTimeout(tickTimeline, 500);
 }
 
 function switchLimiter() {
@@ -1031,17 +1050,24 @@ function switchLimiter() {
   document.getElementById('limiter-name').textContent = name;
   document.getElementById('algo-display').textContent = name;
   document.getElementById('algo-explanation').innerHTML = useTokenBucket
-    ? '<strong style="color:#c9d1d9">Token Bucket:</strong> Maintains virtual token count. Tokens refill over time. Can accumulate burst capacity during idle periods. Memory: O(1) — just two numbers.'
+    ? '<strong style="color:#c9d1d9">Token Bucket:</strong> Maintains virtual token count. Tokens refill at ' + refillRatePerSec + '/sec. Can accumulate burst capacity during idle periods. Memory: O(1) — just two numbers.'
     : '<strong style="color:#c9d1d9">Sliding Window:</strong> Window always ends at NOW. Old requests fall off the left edge as time passes. No boundary burst possible. Memory: O(n) — stores each timestamp.';
-  tokens = limit; lastRefill = Date.now();
+  requests = [];
+  requestLog = [];
+  tokens = maxTokens;
+  lastRefill = Date.now();
+  renderTimeline();
 }
 
 function resetLimiter() {
-  requests = []; tokens = limit; lastRefill = Date.now();
-  document.getElementById('count-display').textContent = '0 / ' + limit;
+  requests = [];
+  requestLog = [];
+  tokens = maxTokens;
+  lastRefill = Date.now();
   document.getElementById('result-display').textContent = '—';
   document.getElementById('result-display').style.color = '#7ee787';
   document.getElementById('timeline').querySelectorAll('.ir-req-dot').forEach(function(d) { d.remove(); });
+  renderTimeline();
 }
 
 // Circuit breaker simulation

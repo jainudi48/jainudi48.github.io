@@ -1,13 +1,13 @@
 ---
 layout: post
-title: "Backend Patterns Built with Concurrency in Mind"
+title: "Backend Resiliency Patterns Every Engineer Should Know"
 date: 2026-06-08
-categories: [system-design, backend, concurrency]
-tags: [system-design, concurrency, backend, interview-prep, csharp]
-description: "A deep-dive into rate limiting, circuit breaking, load balancing, and retry patterns — backend constructs designed with concurrency in mind, with the reasoning that separates senior engineers from the rest."
+categories: [system-design, backend, resiliency]
+tags: [system-design, resiliency, concurrency, backend, interview-prep, csharp]
+description: "A deep-dive into rate limiting, circuit breaking, load balancing, and retry patterns — the resiliency primitives that keep backend systems alive under failure and load, with the concurrency reasoning that separates senior engineers from the rest."
 ---
 
-# Backend Patterns Built with Concurrency in Mind
+# Backend Resiliency Patterns Every Engineer Should Know
 
 There is a specific kind of interview question that separates senior engineers from those still growing into that role. The interviewer gives you something deceptively simple — "implement a rate limiter" — and watches not just *what* you build, but *how* you reason about shared state, failure, and correctness under concurrent load.
 
